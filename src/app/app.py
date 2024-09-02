@@ -39,6 +39,7 @@ from titiler.mosaic.factory import MosaicTilerFactory
 
 
 from .dependencies import PostProcessParams
+from .colormaps import ColorMapParams
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
@@ -102,6 +103,7 @@ if not api_settings.disable_cog:
     cog = TilerFactory(
         router_prefix="/cog",
         process_dependency=PostProcessParams,
+        colormap_dependency=ColorMapParams,
         extensions=[
             cogValidateExtension(),
             cogViewerExtension(),
