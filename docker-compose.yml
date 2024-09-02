@@ -1,57 +1,17 @@
-x-common-nginx:
-  &common-nginx
-  ports:
-    - 8001:80
-
 services:
-  nginx:
-    <<: *common-nginx
-    profiles:
-      - prod
-    build: .
-    volumes:
-      - ./data:/var/www/data:ro
-  nginx-dev:
-    <<: *common-nginx
-    profiles:
-      - dev
-    image: nginx
-    volumes:
-      - ./data:/var/www/data:ro
-      - ./nginx/dev.conf.template:/etc/nginx/templates/default.conf.template:ro
-
-  vite:
-    build:
-      target: frontend
-    volumes:
-      - ./src:/app/src
-      - ./config.js:/app/public/config.js
-    ports:
-      - "3000:3000"
-    profiles:
-      - dev
-
   titiler:
-    build: ./titiler
+    build: .
     tty: true
     stdin_open: true
     ports:
       - "5002:8080"
     volumes:
-      - ./titiler/src:/app/src
+      - ./src:/app/src
     environment:
       - TITILER_API_ROOT_PATH=/tiler
       - TITILER_API_CACHECONTROL=no-cache
       - REDIS_HOST=redis
     command: ["pdm", "run", "uvicorn", "src.app.app:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
-
-  jupyter:
-    build: ./titiler
-    command: jupyter notebook --allow-root --ip 0.0.0.0 --no-browser --NotebookApp.token='' --NotebookApp.password=''
-    ports:
-      - 8888:8888
-    volumes:
-      - ./titiler/src:/app/src
 
   redis:
     image: redis

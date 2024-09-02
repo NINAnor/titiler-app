@@ -16,8 +16,6 @@ jobs:
       matrix:
         include:
           - context: .
-            image: ghcr.io/${{ github.repository }}-nginx
-          - context: ./titiler
             image: ghcr.io/${{ github.repository }}-titiler
   
     permissions:
