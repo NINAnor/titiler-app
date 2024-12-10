@@ -25,7 +25,7 @@
     "react": "^18.2.0",
     "react-arborist": "^3.3.0-rc.1",
     "react-dom": "^18.2.0",
-    "rollup": "^4.5.2",
+    "rollup": "^4.28.1",
     "swr": "^2.2.4"
   },
   "devDependencies": {
