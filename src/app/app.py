@@ -4,9 +4,10 @@ import logging
 import re
 
 import jinja2
+import rasterio
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.security.api_key import APIKeyQuery
-from rio_tiler.io import STACReader
+from rio_tiler.io import Reader, STACReader
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -18,6 +19,7 @@ from titiler.application.settings import ApiSettings
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import (
     AlgorithmFactory,
+    ColorMapFactory,
     MultiBaseTilerFactory,
     TilerFactory,
     TMSFactory,
@@ -32,6 +34,7 @@ from titiler.extensions import (
     cogValidateExtension,
     cogViewerExtension,
     stacExtension,
+    stacRenderExtension,
     stacViewerExtension,
 )
 from titiler.mosaic.errors import MOSAIC_STATUS_CODES
@@ -46,34 +49,34 @@ logging.getLogger("botocore.utils").disabled = True
 logging.getLogger("rio-tiler").setLevel(logging.ERROR)
 
 jinja2_env = jinja2.Environment(
-    loader=jinja2.ChoiceLoader([jinja2.PackageLoader("titiler.application", "templates")])
+    loader=jinja2.ChoiceLoader([jinja2.PackageLoader(__package__, "templates")])
 )
 templates = Jinja2Templates(env=jinja2_env)
 
 
 api_settings = ApiSettings()
 
-###############################################################################
-# Setup a global API access key, if configured
-api_key_query = APIKeyQuery(name="access_token", auto_error=False)
+app_dependencies = []
+if api_settings.global_access_token:
+    ###############################################################################
+    # Setup a global API access key, if configured
+    api_key_query = APIKeyQuery(name="access_token", auto_error=False)
 
+    def validate_access_token(access_token: str = Security(api_key_query)):
+        """Validates API key access token, set as the `api_settings.global_access_token` value.
+        Returns True if no access token is required, or if the access token is valid.
+        Raises an HTTPException (401) if the access token is required but invalid/missing.
+        """
+        if not access_token:
+            raise HTTPException(status_code=401, detail="Missing `access_token`")
 
-def validate_access_token(access_token: str = Security(api_key_query)):
-    """Validates API key access token, set as the `api_settings.global_access_token` value.
-    Returns True if no access token is required, or if the access token is valid.
-    Raises an HTTPException (401) if the access token is required but invalid/missing.
-    """
-    if api_settings.global_access_token is None:
+        # if access_token == `token` then OK
+        if access_token != api_settings.global_access_token:
+            raise HTTPException(status_code=401, detail="Invalid `access_token`")
+
         return True
 
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Missing `access_token`")
-
-    # if access_token == `token` then OK
-    if access_token != api_settings.global_access_token:
-        raise HTTPException(status_code=401, detail="Invalid `access_token`")
-
-    return True
+    app_dependencies.append(Depends(validate_access_token))
 
 
 ###############################################################################
@@ -94,13 +97,14 @@ app = FastAPI(
     """,
     version=titiler_version,
     root_path=api_settings.root_path,
-    dependencies=[Depends(validate_access_token)],
+    dependencies=app_dependencies,
 )
 
 ###############################################################################
 # Simple Dataset endpoints (e.g Cloud Optimized GeoTIFF)
 if not api_settings.disable_cog:
     cog = TilerFactory(
+        reader=Reader,
         router_prefix="/cog",
         process_dependency=PostProcessParams,
         colormap_dependency=ColorMapParams,
@@ -126,6 +130,7 @@ if not api_settings.disable_stac:
         router_prefix="/stac",
         extensions=[
             stacViewerExtension(),
+            stacRenderExtension(),
         ],
     )
 
@@ -161,6 +166,15 @@ app.include_router(
     tags=["Algorithms"],
 )
 
+###############################################################################
+# Colormaps endpoints
+cmaps = ColorMapFactory()
+app.include_router(
+    cmaps.router,
+    tags=["ColorMaps"],
+)
+
+
 add_exception_handlers(app, DEFAULT_STATUS_CODES)
 add_exception_handlers(app, MOSAIC_STATUS_CODES)
 
@@ -184,6 +198,7 @@ app.add_middleware(
         "image/jp2",
         "image/webp",
     },
+    compression_level=6,
 )
 
 app.add_middleware(
@@ -207,9 +222,17 @@ if api_settings.lower_case_query_parameters:
     operation_id="healthCheck",
     tags=["Health Check"],
 )
-def ping():
+def application_health_check():
     """Health check."""
-    return {"ping": "pong!"}
+    return {
+        "versions": {
+            "titiler": titiler_version,
+            "rasterio": rasterio.__version__,
+            "gdal": rasterio.__gdal_version__,
+            "proj": rasterio.__proj_version__,
+            "geos": rasterio.__geos_version__,
+        }
+    }
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

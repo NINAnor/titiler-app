@@ -1,25 +1,30 @@
 [project]
-name = ""
-version = ""
+name = "nina-titiler"
+version = "0.0.1"
 description = ""
 authors = [
     {name = "Niccolò Cantù", email = "niccolo.cantu@nina.no"},
 ]
 dependencies = [
-    "titiler-application>=0.17.0",
-    "uvicorn>=0.27.0.post1",
-    "matplotlib>=3.8.2",
-    "titiler-extensions[cogeo]>=0.17.0",
-    "rio-tiler>=6.4.0",
-    "scipy>=1.12.0",
-    "ipdb>=0.13.13",
-    "opencv-python>=4.9.0.80",
-    "jupyter>=1.0.0",
-    "notebook>=7.0.7",
-    "jupyterlab>=4.1.0",
-    "walrus>=0.9.3",
+    "titiler-application>=0.21.1",
+    "uvicorn",
+    "matplotlib",
+    "titiler-extensions[cogeo]",
+    "rio-tiler",
+    "scipy",
+    "opencv-python",
+    "walrus"
 ]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
+
+
+[project.optional-dependencies]
+notebook = [
+    "jupyter>=1.0.0",
+    "notebook>=7.0.7",
+    "jupyterlab>=4.1.0",
+    "ipdb>=0.13.13",
+]
 
