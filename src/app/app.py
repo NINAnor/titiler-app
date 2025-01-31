@@ -49,7 +49,7 @@ logging.getLogger("botocore.utils").disabled = True
 logging.getLogger("rio-tiler").setLevel(logging.ERROR)
 
 jinja2_env = jinja2.Environment(
-    loader=jinja2.ChoiceLoader([jinja2.PackageLoader(__package__, "templates")])
+    loader=jinja2.ChoiceLoader([jinja2.PackageLoader("titiler.application", "templates")])
 )
 templates = Jinja2Templates(env=jinja2_env)
 
