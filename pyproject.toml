@@ -2,22 +2,19 @@
 name = "nina-titiler"
 version = "0.0.1"
 description = ""
-authors = [
-    {name = "Niccolò Cantù", email = "niccolo.cantu@nina.no"},
-]
+authors = [{ name = "Niccolò Cantù", email = "niccolo.cantu@nina.no" }]
 dependencies = [
-    "titiler-application>=0.21.1",
+    "titiler-application==0.24.2",
     "uvicorn",
     "matplotlib",
     "titiler-extensions[cogeo]",
     "rio-tiler",
-    "scipy",
     "opencv-python",
-    "walrus"
+    "walrus",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 
 [project.optional-dependencies]
@@ -26,5 +23,5 @@ notebook = [
     "notebook>=7.0.7",
     "jupyterlab>=4.1.0",
     "ipdb>=0.13.13",
+    "scipy",
 ]
-
