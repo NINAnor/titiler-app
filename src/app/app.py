@@ -40,16 +40,20 @@ from titiler.extensions import (
 from titiler.mosaic.errors import MOSAIC_STATUS_CODES
 from titiler.mosaic.factory import MosaicTilerFactory
 
+import duckdb
 
 from .dependencies import PostProcessParams
 from .colormaps import ColorMapParams
+from .vectors import VectorFactory
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
 logging.getLogger("rio-tiler").setLevel(logging.ERROR)
 
 jinja2_env = jinja2.Environment(
-    loader=jinja2.ChoiceLoader([jinja2.PackageLoader("titiler.application", "templates")])
+    loader=jinja2.ChoiceLoader(
+        [jinja2.PackageLoader("titiler.application", "templates")]
+    )
 )
 templates = Jinja2Templates(env=jinja2_env)
 
@@ -99,6 +103,11 @@ app = FastAPI(
     root_path=api_settings.root_path,
     dependencies=app_dependencies,
 )
+
+duckdb.execute("install spatial;")
+
+vector = VectorFactory()
+app.include_router(vector.router, prefix="/duckdb", tags=["GeoParquet"])
 
 ###############################################################################
 # Simple Dataset endpoints (e.g Cloud Optimized GeoTIFF)

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>DuckDB Vector Tile Demo</title>
+    <link rel="icon" type="image/x-icon"
+        href="https://onegiantleap.dev/wp-content/uploads/2024/01/ogl-letter-logo-design-with-polygon-shape-ogl-polygon-and-cube-shape-logo-design-ogl-hexagon-logo-template-white-and-black-colors-ogl-monogram-business-and-real-estate-logo-vector.png">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <script src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #floating-textbox {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            width: 250px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'dataset': {
+                        type: 'vector',
+                        tiles: [`${window.location.origin}/duckdb/tiles/{z}/{x}/{y}.pbf?url={{url}}`],
+                    },
+                    // Also use a public open source basemap
+                    'osm': {
+                        type: 'raster',
+                        tiles: [
+                            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                        ],
+                        tileSize: 256,
+                    }
+                },
+                layers: [
+                    {
+                        id: 'background',
+                        type: 'background',
+                        paint: { 'background-color': '#a0c8f0' }
+                    },
+                    {
+                        id: 'osm',
+                        type: 'raster',
+                        source: 'osm',
+                    },
+                    {
+                        id: 'dataset',
+                        type: 'circle',
+                        source: 'dataset',
+                        'source-layer': 'layer',
+                    },
+                ]
+            },
+            center: [10, 65],
+            zoom: 4
+        });
+        map.addControl(new maplibregl.NavigationControl());
+        map.on('click', 'buildings-fill', (e) => {
+            const coordinates = e.lngLat;
+            const properties = e.features[0].properties;
+            let popupContent = '<h3>Properties</h3>';
+            for (const [key, value] of Object.entries(properties)) {
+                popupContent += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            new maplibregl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(popupContent)
+                .addTo(map);
+        });
+    </script>
+</body>
+
+</html>

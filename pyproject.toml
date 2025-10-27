@@ -11,6 +11,9 @@ dependencies = [
     "rio-tiler",
     "opencv-python",
     "walrus",
+    "duckdb>=1.4.1",
+    "morecantile>=6.2.0",
+    "fastapi[standard]>=0.115.8",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
